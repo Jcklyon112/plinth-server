@@ -14,20 +14,30 @@ from fastapi.responses import HTMLResponse
 
 router = APIRouter()
 
-REPO_ROOT = Path(__file__).resolve().parents[4]
-PICKER_HTML_PATH = REPO_ROOT / "plinth-sip" / "backend" / "picker.html"
-REAL_PARCELS_PATH = (
-    REPO_ROOT / "plinth-sip" / "data" / "cache"
-    / "new_york_sag_harbor_20260404.geojson"
+# app/routers/picker.py -> backend root (/app on Render, plinth-server repo root)
+_BACKEND_ROOT = Path(__file__).resolve().parents[2]
+PICKER_HTML_PATH = _BACKEND_ROOT / "picker.html"
+# Optional demo cache; monorepo may keep this under plinth-sip/data/cache instead
+_REAL_PARCEL_CANDIDATES = (
+    _BACKEND_ROOT / "data" / "cache" / "new_york_sag_harbor_20260404.geojson",
+    _BACKEND_ROOT.parent / "data" / "cache" / "new_york_sag_harbor_20260404.geojson",
 )
+
+
+def _real_parcels_path() -> Path | None:
+    for path in _REAL_PARCEL_CANDIDATES:
+        if path.exists():
+            return path
+    return None
 
 
 def _load_real_parcels() -> dict:
     """Index Sag Harbor parcels by PRINT_KEY, keeping the exterior ring."""
     parcels: dict = {}
-    if not REAL_PARCELS_PATH.exists():
+    cache_path = _real_parcels_path()
+    if cache_path is None:
         return parcels
-    with open(REAL_PARCELS_PATH, "r", encoding="utf-8") as f:
+    with open(cache_path, "r", encoding="utf-8") as f:
         data = json.load(f)
     for feat in data.get("features", []):
         geom = feat.get("geometry") or {}

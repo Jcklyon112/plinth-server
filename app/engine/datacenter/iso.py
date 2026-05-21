@@ -25,11 +25,18 @@ from typing import Optional, TypedDict
 log = logging.getLogger(__name__)
 
 
-# Path to iso_metadata.json. Resolved relative to the repo root by
-# walking up from this file (backend/app/engine/datacenter/iso.py ->
-# repo/data/grid/iso_metadata.json).
 def _default_metadata_path() -> Path:
-    return Path(__file__).resolve().parents[4] / "data" / "grid" / "iso_metadata.json"
+    """backend/data/grid first, then plinth-sip/data/grid in the monorepo."""
+    here = Path(__file__).resolve()
+    backend_root = here.parents[3]  # .../backend
+    candidates = (
+        backend_root / "data" / "grid" / "iso_metadata.json",
+        backend_root.parent / "data" / "grid" / "iso_metadata.json",
+    )
+    for path in candidates:
+        if path.exists():
+            return path
+    return candidates[0]
 
 
 class IsoEntry(TypedDict, total=False):

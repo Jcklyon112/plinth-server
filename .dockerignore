@@ -8,6 +8,5 @@
 .env.*
 *.md
 *.bat
-picker.html
 test_ny_accuracy.py
 tests/
