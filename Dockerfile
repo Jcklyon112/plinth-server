@@ -1,5 +1,8 @@
-# Build from plinth-sip/ (includes municipality configs):
-#   docker build -f backend/Dockerfile -t plinth-sip-api .
+# plinth-server repo: build context is this directory (repo root on Render).
+#   docker build -t plinth-sip-api .
+#
+# plinth-sip monorepo: build from backend/ with the same Dockerfile; mount
+#   ../configs at /configs in docker-compose for live config edits.
 FROM python:3.11-slim
 
 RUN apt-get update && apt-get install -y \
@@ -15,13 +18,14 @@ ENV CONFIGS_DIR=/configs
 
 WORKDIR /app
 
-COPY backend/requirements.txt .
+COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY backend/ .
+COPY . .
+
+# Municipality JSON configs (committed under configs/municipalities/)
 COPY configs/ /configs
 
 EXPOSE 8000
 
-# Render sets PORT; default 8000 for local docker runs.
 CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]

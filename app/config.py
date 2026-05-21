@@ -4,9 +4,16 @@ from pydantic_settings import BaseSettings
 from pathlib import Path
 
 
-# Resolve paths relative to the backend directory
+# Resolve configs: bundled in repo (Render), sibling folder (plinth-sip monorepo), or /configs in Docker.
 _BACKEND_DIR = Path(__file__).resolve().parent.parent
-_DEFAULT_CONFIGS = str(_BACKEND_DIR.parent / "configs")
+_BUNDLED = _BACKEND_DIR / "configs"
+_MONOREPO = _BACKEND_DIR.parent / "configs"
+if _BUNDLED.is_dir():
+    _DEFAULT_CONFIGS = str(_BUNDLED)
+elif _MONOREPO.is_dir():
+    _DEFAULT_CONFIGS = str(_MONOREPO)
+else:
+    _DEFAULT_CONFIGS = "/configs"
 
 
 def normalize_database_url(url: str | None) -> str | None:
