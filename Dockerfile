@@ -28,4 +28,5 @@ COPY configs/ /configs
 
 EXPOSE 8000
 
-CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
+# Migrations create tables + PostGIS (001_initial_schema). Re-runs are no-ops.
+CMD ["sh", "-c", "alembic upgrade head && exec uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]

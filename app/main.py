@@ -2,6 +2,7 @@ import os
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from app.config import validate_production_database
 from app.routers import municipalities, parcels, templates, scans, exports, analysis, reports, demo, picker, datacenter
 
 app = FastAPI(
@@ -63,6 +64,8 @@ app.include_router(datacenter.grid_router, prefix="/grid", tags=["Grid Layers"])
 
 @app.on_event("startup")
 async def startup_checks():
+    validate_production_database()
+
     if os.environ.get("ANTHROPIC_API_KEY"):
         print("LangGraph zoning extraction: ENABLED (ANTHROPIC_API_KEY found)")
     else:
@@ -71,6 +74,11 @@ async def startup_checks():
             "  All parcels will use low-confidence auto-generated configs (16% confidence).\n"
             "  Set ANTHROPIC_API_KEY in backend/.env to enable real zoning data extraction."
         )
+
+
+@app.get("/")
+def root():
+    return {"service": "plinth-sip-api", "docs": "/docs", "health": "/health"}
 
 
 @app.get("/health")
