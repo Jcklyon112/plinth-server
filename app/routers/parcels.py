@@ -1,6 +1,61 @@
 from fastapi import APIRouter, HTTPException, Body
 
+from app.placement.site_placement import place_largest_model
+
 router = APIRouter()
+
+
+def _enrich_parcel_with_placement_and_rent(
+    result: dict,
+    *,
+    lat: float,
+    lon: float,
+) -> dict:
+    """Attach largest-model placement footprint and RentCast monthly rent."""
+    geom = result.get("geometry")
+    if not geom:
+        return result
+
+    try:
+        placement = place_largest_model(geom)
+    except Exception as exc:
+        print(f"[search] placement failed: {exc}")
+        placement = None
+    print(f'placement---------> {placement}')
+    if not placement:
+        result["placement"] = None
+        result["rent"] = None
+        return result
+
+    result["placement"] = placement
+    from app.agents.rentcast_client import RentCastError, fetch_monthly_rent, get_rentcast_key
+
+    if not get_rentcast_key():
+        result["rent"] = {
+            "status": "unconfigured",
+            "message": "RentCast API key not configured. Set RENTCAST_API_KEY in backend/.env.",
+        }
+        return result
+
+    address = (result.get("parcel") or {}).get("address") or ""
+    try:
+        rent = fetch_monthly_rent(
+            address=address or None,
+            lat=lat if not address else None,
+            lon=lon if not address else None,
+            bedrooms=float(placement["bedrooms"]),
+            bathrooms=float(placement["bathrooms"]),
+            square_footage=int(placement["sqft"]),
+        )
+        result["rent"] = {"status": "ok", **rent}
+    except RentCastError as exc:
+        print(f"[search] RentCast failed: {exc}")
+        result["rent"] = {"status": "error", "message": str(exc)}
+    except Exception as exc:
+        print(f"[search] RentCast failed: {type(exc).__name__}: {exc}")
+        result["rent"] = {"status": "error", "message": str(exc)}
+
+    return result
 
 
 def _rapidapi_search_response(
@@ -48,7 +103,7 @@ def _rapidapi_search_response(
     if not result:
         return None
 
-    return {
+    payload = {
         "status": "found",
         "parcel": {
             "address": result["address"],
@@ -58,6 +113,7 @@ def _rapidapi_search_response(
         "source": "rapidapi",
         "message": "Parcel loaded from RapidAPI Property Lines.",
     }
+    return _enrich_parcel_with_placement_and_rent(payload, lat=lat, lon=lon)
 
 
 @router.post("/search")

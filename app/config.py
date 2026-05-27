@@ -26,6 +26,7 @@ class Settings(BaseSettings):
 
     ENV: str = "development"
     X_RAPIDAPI_KEY: str = Field(default="", validation_alias="X-RAPIDAPI-KEY")
+    RENTCAST_API_KEY: str = Field(default="")
     CORS_ORIGINS: str = ""
 
 
@@ -33,6 +34,8 @@ settings = Settings()
 
 if settings.X_RAPIDAPI_KEY and not os.environ.get("X-RAPIDAPI-KEY"):
     os.environ["X-RAPIDAPI-KEY"] = settings.X_RAPIDAPI_KEY
+if settings.RENTCAST_API_KEY and not os.environ.get("RENTCAST_API_KEY"):
+    os.environ["RENTCAST_API_KEY"] = settings.RENTCAST_API_KEY
 if settings.CORS_ORIGINS and not os.environ.get("CORS_ORIGINS"):
     os.environ["CORS_ORIGINS"] = settings.CORS_ORIGINS
 

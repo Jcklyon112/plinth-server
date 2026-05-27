@@ -44,6 +44,11 @@ async def startup_checks():
             "WARNING: X-RAPIDAPI-KEY not set. "
             "Parcel search will return no_match until configured in backend/.env."
         )
+    if not os.environ.get("RENTCAST_API_KEY"):
+        print(
+            "WARNING: RENTCAST_API_KEY not set. "
+            "Parcel search will omit monthly rent until configured in backend/.env."
+        )
 
 
 @app.get("/")
