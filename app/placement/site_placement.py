@@ -192,15 +192,11 @@ def place_largest_model(
 
     parcel_m = _to_local_meters(parcel_wgs, to_utm)
     if building_geometry:
-        print(f'building_geometry---------> {building_geometry}')
         building_wgs = shape(building_geometry)
     else:
         building_wgs = building_on_parcel(parcel_wgs)
-        print(f'building_wgs---------> {building_wgs}')
     building_m = _to_local_meters(building_wgs, to_utm) if building_wgs is not None else None
-    print(f'building_m---------> {building_m}')
     available = _available_area(parcel_m, building_m)
-    print(f'available---------> {available}')
     if available.is_empty:
         return None
 
